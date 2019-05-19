@@ -1,0 +1,74 @@
+Gregory Biegel - sr1372580
+
+================================================
+Bodgitt & Scarper LLC. Contractor Booking System
+================================================
+
+----------
+User guide
+----------
+
+This user guide explains how to use the Bodgitt & Scarper LLC. Contractor booking system. The system allows the viewing of contractor information, providing easy search facilities to permit searching on contractor name and/or location. In addition, the system permits users to book a specific contractor, as well as delte a contractor from the database. The application may be run as a fully networked client/server application, or as a standalone application on a single machine.
+
+1. Running the application
+==========================
+
+The application may be run in any one of three modes, described below: 
+
+1.1 Server
+---------
+The application may be run in server mode, acting as a database server to one or more remote clients. The server may be started with the following command: java -jar runme.jar server. If this is the first time the server has been run, the application prompts the user for the database file via a graphical file chooser, and once the database file is selected, the application starts up in console mode. If the server has been run before, the choice of database file is retained in the suncertify.properties file in the working directory. When the server is started the next time, the user is asked whether they would like to start the server with the file configured previously, or choose a different file. 
+
+1.2 Client
+----------
+The application may be run as a remote network client, by issuing the following command: java -jar runme.jar. In this case, the application starts up and a graphical window is presented to the user asking them to input the address of the host on which the database server to be used by this client is running. If the user enters a valid host address and there is a server running on that host, the graphical client interface opens. If the hostname is invalid, or a database server may not be found running on the host, an informational message is displayed to the user as to the likely problem, and the application exits. The user choice of hostname is retained in the suncertify.properties file in the working directory the first time the client application is run. On subsequent execution of the client, the user is given the option to retain the previously configured hostname, or enter a different hostname. 
+
+1.3 Standalone mode
+-------------------
+The application may be run in standalone mode whereby the database server and client run on the same host, and all networking code is bypassed. In order to run in this mode, the following command is issued: java -jar suncertify.Main alone. The application prompts the user to select the database file via a graphical file chooser, and once a database file has been opened, the graphical client window appears. 
+
+2. Searching for a contractor
+=============================
+
+The user is able to search the contractor database for all records, or for records where the name and/or location values match those specified by the user. The search interface consists of two input fields where the user may enter search criteria for the name and/or location parameters, and a button to perform the search. If no entries are made in the input fields, and the search button is pressed, all records in the database are returned. If only one search term is entered, the records are returned containing the appropriate field which matches the relevant search term. If both search terms are entered, the records are returned containing fields that match both search terms. Search results are displayed in the table of the main user interface window. Note the search is case insensitive. 
+Match in this context means that the field value begins with the search term. This is interpreted from the search API provided in the system requirements documentation. 
+
+3. Booking a contractor
+=======================
+
+The user is able to book a single contractor at a time. The process for booking a contractor is as follows: 
+Select a contractor that has not been previously booked, by clicking on the appropriate row in the table of contractors. Booked contractors are those which have a value in the 'Owner field', and these may not be booked again. 
+Enter your 8-digit CSR value in the 'Customer ID' field of the user interface. 
+Press the 'Book contractor button' 
+Any errors made during this process (e.g. trying to book an already booked contractor, or not entering a CSR no.) will be communicated upon pressing the 'Book contractor button'. 
+The display will be refreshed, indicating the contractor booked under your CSR, as well as reflecting any other changes made by other clients. 
+During the booking process, it may occur that another client has booked a contractor, but your display has not been refreshed to reflect this, and so the contractor does not appear booked. Upon trying to book this contractor, an error message will be received, indicating the contractor is already booked. In order to minimise the risk of this, it is advisable to refresh your display prior to making a booking, by pressing the Search button with no search terms entered. 
+
+4. Deleting a contractor
+========================
+
+The user is able to delete a single contractor at a time by selecting the appropriate row in the contractor table, and pressing the 'Delete contractor' button. If the contractor has not already been deleted by another client, it will deleted, and the display refreshed to reflect the latest changes to the database. If the delete contractor button is pressed when no contractor is selected in the table of contractors, an error is displayed prompting the user to select a contractor to delete.
+
+5. User Assistance
+==================
+
+The user interface has certain features incorporated to make the application as usable as possible.
+
+5.1 Tool Tips
+-------------
+The application provides 'tool tips' - that is hints as to the function of a particular button or input field on the user interface. In order to display the tip, place the mouse pointer over the button or input field you are interested in viewing a hint for, and the text will pop up.
+
+
+5.2 Mnemonics
+-------------
+Each button on the user interface has a mnemonic associated with it - that is a key that when combined with the look and feels mouseless operator (usually the 'Alt' key) will activate this button. The mnemonics for each button are related to the first word of the button description. Thus, the following mnemonics are available:
+
+Alt-S - Search for a contractor
+Alt-B - Book a contractor
+Alt-D - Delete a contractor
+
+
+6. Potential errors
+===================
+
+Potential errors that may occur during the booking and deletion of contractors have been described in the preceding sections. Additional errors may occur if the remote database server goes down, whilst clients are still connected. In this case, no operations may be performed, since communication may not be made with the server. All errors are communicated to the user as dialog boxes describing the likely cause of the error. 

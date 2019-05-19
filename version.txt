@@ -1,0 +1,2 @@
+JDK 1.4.2_08-b03
+Windows XP Professional

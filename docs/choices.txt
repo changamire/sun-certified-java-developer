@@ -1,0 +1,115 @@
+Gregory Biegel - sr1372580
+
+1. General Issues
+=================
+
+The application is implemented as a 3-tier architecture. The presentation tier is implemented in suncertify.client, the logic tier in suncertify.server, and the data tier in suncertify.db. The motivation for this approach was based on the advantages of such an architecture, primarily the clear separation presentation from application logic and data access. Bearin in mind that Bodgitt and Scarper are hoping to move to Internet-based marketing and offer their services over the web, the architecture makes it easy to add a web client in the future. All that is required is for the client to get a reference to the services singleton and use the business API exposed therein.
+
+2. Assumptions
+==============
+
+Since the company's IT director intends the Java system to be used as a learning exercise before moving to a web-based system, certain assumptions have neen made during the implementation of the application.
+
+2.1 Client functionality
+------------------------
+Functionality to book, delete, and search for contractor records has been implemented in the client interface as per functional specifications. Additional functionality to add records and unbook contractors has not been provided within the client application since there is no call for it in the functional specification, however it has been fully implemented within the data and logic tiers of the application, allowing full use to be made of this functionality by the envisaged web client in the future.
+
+2.2 Security
+------------
+Since there was no requirement for authentication or authorization in the functional specification, no functionality has been implemented to provide such secure access to the database. At present any user may book any (currently unbooked) contractor by providing any 8-digit CSR number, and similarly for the deletion of contractor records there is no authentication or authorization of system users.
+
+2.3 Performance and scalability
+-------------------------------
+It has been assumed that the database file will not grow to a size whereby it cannot be stored in the memory allocated to the heap on an average desktop PC. Furthermore it has been assumed for this iteration of the development lifecycle system performance is not critical.
+
+
+3. Design Patterns
+==================
+
+The application architecture makes use of a number of design patterns, detailed below:
+
+3.1 Service Layer - the suncertify.server.Services business API provides a 'Service Layer' demarcating the boundary between client and server in the application.
+
+3.2 Singleton - the suncerify.services.ServicesImpl, suncertify.services.RemoteServicesImpl, and suncertify.db.Data classes are implemented as singletons to ensure all access to the database file takes place via single class instances.
+
+3.3 Service locator - the static getInstance() methods in suncerify.services.ServicesImpl and suncertify.services.RemoteServicesImpl are examples of the Service Locator pattern.
+
+3.4 Model View Controller - the client package of the application is implemented as an MVC application. The class suncertify.client.GUI provides the View, whilst the Model is provided by suncertify.client.ContractorTableModel, and the controller is implemented in suncertify.client.GUIController.
+
+1. Service Layer - the suncerify.server package provides a service layer through which clients may uniformly interact with service code.
+
+2. Identity Map
+
+
+4. Client design
+================
+
+The client is designed to offer an intuitive visual interface to the database through the server whther running locally, on the same machine, or remotely over a network. The client has been designed to offer the minimal functional requirements as identified in the client specification, whilst remaining clear and easy to use. The client GUI adopts the system look and feel, so the application may easily be run across a variety of operating system platforms, whilst remaining usable on each platform. 
+The client GUI is designed to run on low screen resolutions in order to make it as widely available on legacy hardware as possible.
+
+
+5. Server design
+================
+
+The server has been designed to provided efficient and effective access to data held within the database file. Efficiency is ensured by only accessing the file when necessary (i.e. when updates, creates, or deletes are made to data) thereby ensuring minimal disk access activity. Reads are performed using an in-memory list of data which is synchronized with the database file on the disk. Effective access to data is provided through the implementation of a record locking scheme which ensures that concurrent access may be made to the database by multiple users without corruption of the data.
+
+
+
+6. Configuration
+================
+
+1. Configuration information for the application consists of (a) The path to the database file used by the server; and (b) The hostname of the database server used by the client. The rmiregistry is assumed to always run on port 1099 (since the user guide directs users of the application to start the rgistry on this port), and thus the registry port is constant and not part of the configuration information.
+
+2. All configuration is done via a GUI at application startup. The choice of database file is made via an intuitive file chooser window at server startup, whilst the specification of hostname is via a freeform entry text field at client startup. 
+
+3. The configuration information is stored in a file named suncertify.properties in the working directory, in the form of key value pairs for path and hostname. This file is created the first time the application is run, and on subsequent execution the user is presented the current configuration information via a dialog box and is given the option to start the application with the exisitng configuration, or change the configuration. All changes made to the configuration at startup are persisted to the suncertify.properties file.
+
+It is assumed that the port that the rmi registry runs on is a constant, and is consequently not configurable. The registry always runs on port 1099 as part of the application.
+
+
+7. General data access issues
+=============================
+1. The database file supplied by the client was accessed using the java.io.RandomAccessFile class, via an implementation of the data access API defined in the suncertify.db.DBAccess interface also supplied by the client. 
+
+2. The implementation of the data access interface (DBAccess) is suncertify.db.Data, which is implemented as a singleton. The singleton property is enforced through a private constructor in conjunction with a public static factory method. This class uses a RandomAccessFile object to access the database file, reading the whole file into memory as part of the class construction. All of the synchronized code is within the Data class
+
+3. At startup, the Data class reads all contractor records from the database file, and creates an object-oriented Contractor object for each record. All Contractor objects are then stored in an in-memory cache (List) of records. This list of records is used to transfer the contractor data between client and server. Any updates made to contractor data are made both to this list and to the database file. Failure to update either the data structure or the physical file will result in neither being updated to ensure consistency between the two.
+
+4. It is assumed that at present, the only updates that may be made to the database by the application, are to the owner field, and the deleted flag field of a particular record. That is, the other data in the file is assumed to be read-only at present.
+
+
+8. Locking API issues
+=====================
+
+The locking API is implemented in the suncertify.db.Data class and is only used by the suncertify.server.ServicesImpl class. A contract is specified in the Javadoc of the suncertify.db.Data.lock() method that calls for users of the locking API to invoke the lock/process/unlock sequence within the context of a single method call guaranteeing that it will happen within a single thread of execution. The suncertify.db.Data class has a java.util.Map collection of currently locked contractor records and the associated cookie with which the lock was made. The Map is keyed by contractor record id. All write access (e.g. put() and remove() method calls) to the Map collection of locked contractor records is synchronized on the collection object itself.
+
+1. When the lock() method is invoked on a specific contractor record, a check is made to see if any other client holds a lock on that specific contractor record. This is done by checking whether the Map of locked contractors holds the id of the contractor record to be locked. The lock method returns a unique cookie to the calling client.
+
+2. If the record is currently locked by another client thread (i.e. the id of the record is held in the Map of locked contractors), the current thread will wait until it is notified that the record has been unlocked.
+
+3. When the unlock() method is invoked on a specific contractor record with a specific cookie, the cookie with which the contractor record was originally locked is retrived from the Map of locked contractor records. A comparison is made between the value of the cookie retrieved from the Map, and that supplied by the client. If the two match, it is taken that the client calling the unlock() method is the same that called the lock() method originally and the record id is removed from the Map of locked contractor records. All waiting threads are notified at this point.
+
+Deadlock is prevented by specifying a contract to be followed by users of the locking API.
+
+
+9. Database File Format Specification
+=====================================
+
+The database file schema as outlined in the requirements document is captured in by the suncertify.db.Data.readFile() method, and the database file is parsed according to this schema.
+
+
+10. User Interface 
+==================
+1. The user interface is composed exclusively of lightweight Java Foundation Classes (Swing components), as per user specifications.
+
+2. The components on the main user interface screen are laid out from left to right, up to down, based on the assumption that the majority of western users will read the screen in this manner.
+
+3. The layout of the screen is controlled by the java.awt.BorderLayout and java.awt.FlowLayout classes.
+
+4. Mnemonics and tool tips are provided to assist the user in using the interface. This is documented in the userguide.txt file.
+
+11. Sockets vs. RMI
+===================
+1. The networking technology selected was RMI over JRMP. This choice was made due to consideration that the Java distributed object model provided a more rapid development path than custom protocol implemetation over sockets. In addition, the provision of at-most-once invocation semantics by RMI provides the application with tolerance against omission failures as well as crash failures.
+The suncertify.server.RemoteServicesImpl class delegates all method calls to the ServicesImpl singleton, thus all critical locking code takes place within a single RMI call and the possibility of the network partitioning during lock/process/unlock is not an issue.
+
